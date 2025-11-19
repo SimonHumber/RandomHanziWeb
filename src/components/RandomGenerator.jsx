@@ -262,9 +262,10 @@ function RandomGenerator() {
                   setCharacterFilter('all')
                 }}
                 className={`px-3 py-2 text-sm md:px-4 md:py-2 md:text-base rounded-md font-medium transition-colors whitespace-nowrap flex-shrink-0 ${category === 'hsk'
-                  ? 'bg-blue-600 text-white'
+                  ? 'text-white'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }`}
+                style={category === 'hsk' ? { backgroundColor: '#282c34' } : {}}
               >
                 HSK
               </button>
@@ -276,9 +277,10 @@ function RandomGenerator() {
                   setCharacterFilter('all')
                 }}
                 className={`px-3 py-2 text-sm md:px-4 md:py-2 md:text-base rounded-md font-medium transition-colors whitespace-nowrap flex-shrink-0 ${category === 'tocfl'
-                  ? 'bg-blue-600 text-white'
+                  ? 'text-white'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }`}
+                style={category === 'tocfl' ? { backgroundColor: '#10b981' } : {}}
               >
                 TOCFL
               </button>
@@ -290,9 +292,10 @@ function RandomGenerator() {
                   setCharacterFilter('all')
                 }}
                 className={`px-3 py-2 text-sm md:px-4 md:py-2 md:text-base rounded-md font-medium transition-colors whitespace-nowrap flex-shrink-0 ${category === 'kanji'
-                  ? 'bg-blue-600 text-white'
+                  ? 'text-white'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }`}
+                style={category === 'kanji' ? { backgroundColor: '#a855f7' } : {}}
               >
                 Kanji
               </button>
@@ -304,9 +307,10 @@ function RandomGenerator() {
                   setCharacterFilter('all')
                 }}
                 className={`px-3 py-2 text-sm md:px-4 md:py-2 md:text-base rounded-md font-medium transition-colors whitespace-nowrap flex-shrink-0 ${category === 'sentence'
-                  ? 'bg-blue-600 text-white'
+                  ? 'text-white'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }`}
+                style={category === 'sentence' ? { backgroundColor: '#f97316' } : {}}
               >
                 Sentence
               </button>
@@ -335,9 +339,15 @@ function RandomGenerator() {
                       })
                     }}
                     className={`px-3 py-1.5 text-sm rounded-full font-medium transition-colors ${selectedLevels.includes(lvl)
-                      ? 'bg-blue-600 text-white'
+                      ? 'text-white'
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }`}
+                    style={selectedLevels.includes(lvl) ? (
+                      category === 'hsk' ? { backgroundColor: '#282c34' } :
+                        category === 'tocfl' ? { backgroundColor: '#10b981' } :
+                          category === 'kanji' ? { backgroundColor: '#a855f7' } :
+                            {}
+                    ) : {}}
                   >
                     {lvl}
                   </button>
@@ -355,27 +365,42 @@ function RandomGenerator() {
                 <button
                   onClick={() => setCharacterFilter('all')}
                   className={`flex-1 px-4 py-2 rounded-md font-medium transition-colors ${characterFilter === 'all'
-                    ? 'bg-blue-600 text-white'
+                    ? 'text-white'
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                     }`}
+                  style={characterFilter === 'all' ? (
+                    category === 'hsk' ? { backgroundColor: '#282c34' } :
+                      category === 'tocfl' ? { backgroundColor: '#10b981' } :
+                        {}
+                  ) : {}}
                 >
                   All
                 </button>
                 <button
                   onClick={() => setCharacterFilter('single')}
                   className={`flex-1 px-4 py-2 rounded-md font-medium transition-colors ${characterFilter === 'single'
-                    ? 'bg-blue-600 text-white'
+                    ? 'text-white'
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                     }`}
+                  style={characterFilter === 'single' ? (
+                    category === 'hsk' ? { backgroundColor: '#282c34' } :
+                      category === 'tocfl' ? { backgroundColor: '#10b981' } :
+                        {}
+                  ) : {}}
                 >
                   Single
                 </button>
                 <button
                   onClick={() => setCharacterFilter('multi')}
                   className={`flex-1 px-4 py-2 rounded-md font-medium transition-colors ${characterFilter === 'multi'
-                    ? 'bg-blue-600 text-white'
+                    ? 'text-white'
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                     }`}
+                  style={characterFilter === 'multi' ? (
+                    category === 'hsk' ? { backgroundColor: '#282c34' } :
+                      category === 'tocfl' ? { backgroundColor: '#10b981' } :
+                        {}
+                  ) : {}}
                 >
                   Multiple
                 </button>
@@ -407,8 +432,21 @@ function RandomGenerator() {
               generateRandom()
             }}
             disabled={loading || isGenerating.current}
-            className="w-full bg-blue-600 text-white py-3 px-6 rounded-md font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-            style={{ pointerEvents: isGenerating.current || loading ? 'none' : 'auto' }}
+            className="w-full text-white py-3 px-6 rounded-md font-medium disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+            style={{
+              backgroundColor: '#282c34',
+              pointerEvents: isGenerating.current || loading ? 'none' : 'auto'
+            }}
+            onMouseEnter={(e) => {
+              if (!loading && !isGenerating.current) {
+                e.target.style.backgroundColor = '#3a3f47'
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!loading && !isGenerating.current) {
+                e.target.style.backgroundColor = '#282c34'
+              }
+            }}
           >
             Generate Random
           </button>
@@ -461,11 +499,14 @@ function RandomGenerator() {
 function HideableField({ label, value, show, onToggle, colorScheme = 'blue' }) {
   const colorClasses = {
     blue: {
-      header: 'bg-blue-50 hover:bg-blue-100',
-      border: 'border-blue-200',
-      text: 'text-blue-700',
-      icon: 'text-blue-600',
-      content: 'bg-blue-50'
+      header: '',
+      border: '',
+      text: 'text-gray-700',
+      icon: '',
+      content: 'bg-gray-50',
+      headerStyle: { backgroundColor: '#f0f0f0' },
+      borderStyle: { borderColor: '#e0e0e0' },
+      iconStyle: { color: '#282c34' }
     },
     green: {
       header: 'bg-green-50 hover:bg-green-100',
@@ -493,15 +534,27 @@ function HideableField({ label, value, show, onToggle, colorScheme = 'blue' }) {
   const colors = colorClasses[colorScheme] || colorClasses.blue
 
   return (
-    <div className={`border-b ${colors.border}`}>
+    <div className={`border-b ${colors.border}`} style={colors.borderStyle || {}}>
       <button
         onClick={onToggle}
         className={`w-full flex justify-between items-center py-3 px-3 text-left transition-colors ${colors.header}`}
+        style={colors.headerStyle || {}}
+        onMouseEnter={(e) => {
+          if (colorScheme === 'blue' && colors.headerStyle) {
+            e.target.style.backgroundColor = '#e0e0e0'
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (colorScheme === 'blue' && colors.headerStyle) {
+            e.target.style.backgroundColor = colors.headerStyle.backgroundColor
+          }
+        }}
       >
         <span className={`font-semibold ${colors.text}`}>{label}</span>
         <svg
           className={`w-5 h-5 ${colors.icon} transition-transform duration-200 ${show ? 'transform rotate-180' : ''
             }`}
+          style={colors.iconStyle || {}}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"

@@ -26,9 +26,10 @@ function CharacterListPage() {
               onClick={() => setActiveTab(tab.id)}
               className={`px-3 py-2 text-sm md:px-4 md:py-3 md:text-base font-medium transition-colors whitespace-nowrap ${
                 activeTab === tab.id
-                  ? 'border-b-2 border-blue-500 text-blue-600'
+                  ? 'border-b-2 text-gray-800'
                   : 'text-gray-600 hover:text-gray-800'
               }`}
+              style={activeTab === tab.id ? { borderBottomColor: '#282c34' } : {}}
             >
               {tab.label}
             </button>

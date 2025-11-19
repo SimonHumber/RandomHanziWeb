@@ -120,9 +120,10 @@ function HSKPractice() {
                   onClick={() => toggleLevel(lvl)}
                   className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                     selectedLevels.includes(lvl)
-                      ? 'bg-blue-500 text-white'
+                      ? 'text-white'
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }`}
+                  style={selectedLevels.includes(lvl) ? { backgroundColor: '#282c34' } : {}}
                 >
                   {lvl}
                 </button>
@@ -141,9 +142,10 @@ function HSKPractice() {
                   onClick={() => setCharacterFilter(filter)}
                   className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                     characterFilter === filter
-                      ? 'bg-blue-500 text-white'
+                      ? 'text-white'
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }`}
+                  style={characterFilter === filter ? { backgroundColor: '#282c34' } : {}}
                 >
                   {filter === 'all' ? 'All' : filter === 'single' ? 'Single' : 'Multiple'}
                 </button>
@@ -162,9 +164,10 @@ function HSKPractice() {
                   onClick={() => setStatusFilter(filter)}
                   className={`px-4 py-2 rounded-full text-sm font-medium transition-colors capitalize ${
                     statusFilter === filter
-                      ? 'bg-blue-500 text-white'
+                      ? 'text-white'
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }`}
+                  style={statusFilter === filter ? { backgroundColor: '#282c34' } : {}}
                 >
                   {filter}
                 </button>
@@ -186,7 +189,7 @@ function HSKPractice() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search by character, pinyin, jyutping, english, vietnamese..."
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-400 focus:border-gray-400"
           />
         </div>
       </div>

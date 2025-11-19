@@ -22,7 +22,7 @@ function Navigation() {
   }
 
   return (
-    <nav className="bg-blue-600 text-white shadow-lg">
+    <nav className="text-white shadow-lg" style={{ backgroundColor: '#282c34' }}>
       <div className="container mx-auto px-4">
         <div className="flex flex-wrap items-center justify-between py-4">
           <Link to="/" className="text-2xl font-bold">
@@ -35,9 +35,10 @@ function Navigation() {
                 to={link.path}
                 className={`px-3 py-2 rounded-md text-sm md:px-4 md:py-2 md:text-base font-medium transition-colors whitespace-nowrap ${
                   isActive(link.path, link.exact)
-                    ? 'bg-blue-700'
-                    : 'hover:bg-blue-500'
+                    ? ''
+                    : 'hover:opacity-80'
                 }`}
+                style={isActive(link.path, link.exact) ? { backgroundColor: 'rgba(255, 255, 255, 0.15)' } : {}}
               >
                 <span className="md:hidden">{link.mobileLabel || link.label}</span>
                 <span className="hidden md:inline">{link.label}</span>

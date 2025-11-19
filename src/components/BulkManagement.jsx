@@ -11,7 +11,7 @@ const AVAILABLE_LEVELS = {
 
 function BulkManagement() {
   const [category, setCategory] = useState('hsk')
-  const [level, setLevel] = useState(1)
+  const [selectedLevels, setSelectedLevels] = useState([1])
   const [count, setCount] = useState(10)
   const [countInput, setCountInput] = useState('10')
   const [characterFilter, setCharacterFilter] = useState('all') // 'all', 'single', 'multi'
@@ -21,13 +21,21 @@ function BulkManagement() {
 
   useEffect(() => {
     updateRandomlyDisabledCount()
-  }, [category, level])
+  }, [category, selectedLevels])
 
   const updateRandomlyDisabledCount = () => {
     const type = getCategoryType(category)
-    const levelToUse = category === 'sentence' ? null : level
-    const disabled = getRandomlyDisabledIds(type, levelToUse)
-    setRandomlyDisabledCount(disabled.length)
+    if (category === 'sentence') {
+      const disabled = getRandomlyDisabledIds(type, null)
+      setRandomlyDisabledCount(disabled.length)
+    } else {
+      // Sum up disabled counts from all selected levels
+      const totalDisabled = selectedLevels.reduce((sum, lvl) => {
+        const disabled = getRandomlyDisabledIds(type, lvl)
+        return sum + disabled.length
+      }, 0)
+      setRandomlyDisabledCount(totalDisabled)
+    }
   }
 
   const getCategoryType = (cat) => {
@@ -44,29 +52,108 @@ function BulkManagement() {
     setLoading(true)
     setMessage('')
     try {
-      let allItems = []
       const type = getCategoryType(category)
+      let totalDisabled = 0
+      let messages = []
 
-      switch (category) {
-        case 'hsk':
-          allItems = await loadHSKData(level)
-          break
-        case 'tocfl':
-          allItems = await loadTOCFLData(level)
-          break
-        case 'kanji':
-          allItems = await loadKanjiData(level)
-          break
-        case 'sentence':
-          allItems = await loadSentenceData()
-          break
-        default:
-          break
+      if (category === 'sentence') {
+        const allItems = await loadSentenceData()
+        const result = randomlyDisableItems(type, allItems, count, null, characterFilter)
+        totalDisabled = result.disabled?.length || 0
+        messages.push(result.message)
+      } else {
+        // Load items from all selected levels, keeping track of which level each item came from
+        const itemsByLevel = []
+        for (const lvl of selectedLevels) {
+          let levelItems = []
+          switch (category) {
+            case 'hsk':
+              levelItems = await loadHSKData(lvl)
+              break
+            case 'tocfl':
+              levelItems = await loadTOCFLData(lvl)
+              break
+            case 'kanji':
+              levelItems = await loadKanjiData(lvl)
+              break
+            default:
+              break
+          }
+          itemsByLevel.push({ level: lvl, items: levelItems })
+        }
+
+        // Combine all items and filter by character type
+        let allItems = []
+        itemsByLevel.forEach(({ level, items }) => {
+          items.forEach((item) => {
+            allItems.push({ ...item, _sourceLevel: level })
+          })
+        })
+
+        // Filter by character type
+        if (characterFilter === 'single') {
+          if (category === 'kanji') {
+            // Kanji are always single character
+          } else {
+            allItems = allItems.filter((item) => item.characterCount === 1)
+          }
+        } else if (characterFilter === 'multi') {
+          if (category === 'kanji') {
+            allItems = []
+          } else {
+            allItems = allItems.filter((item) => item.characterCount > 1)
+          }
+        }
+
+        // Get currently enabled items
+        const disabledIds = getDisabledIds(type)
+        const disabledSet = new Set(disabledIds)
+        let enabledItems = allItems.filter((item) => {
+          const id = category === 'kanji' ? item.kanji : item.id
+          return !disabledSet.has(id)
+        })
+
+        if (enabledItems.length === 0) {
+          setMessage('No enabled items matching the filter to disable')
+          setLoading(false)
+          return
+        }
+
+        // Randomly select items
+        const numToDisable = Math.min(count, enabledItems.length)
+        const shuffled = [...enabledItems].sort(() => Math.random() - 0.5)
+        const toDisable = shuffled.slice(0, numToDisable)
+
+        // Group by source level and disable
+        const itemsBySourceLevel = {}
+        toDisable.forEach((item) => {
+          const sourceLevel = item._sourceLevel
+          if (!itemsBySourceLevel[sourceLevel]) {
+            itemsBySourceLevel[sourceLevel] = []
+          }
+          itemsBySourceLevel[sourceLevel].push(item)
+        })
+
+        // Disable items for each level
+        for (const [sourceLevel, levelItems] of Object.entries(itemsBySourceLevel)) {
+          const levelNum = Number(sourceLevel)
+          // Get original items for this level (without _sourceLevel)
+          const originalItems = itemsByLevel.find(({ level }) => level === levelNum)?.items || []
+          const levelItemIds = levelItems.map((item) => {
+            return category === 'kanji' ? item.kanji : item.id
+          })
+          const levelItemsToDisable = originalItems.filter((item) => {
+            const id = category === 'kanji' ? item.kanji : item.id
+            return levelItemIds.includes(id)
+          })
+          
+          const result = randomlyDisableItems(type, levelItemsToDisable, levelItemsToDisable.length, levelNum, characterFilter)
+          totalDisabled += result.disabled?.length || 0
+          messages.push(`Level ${levelNum}: ${result.message}`)
+        }
       }
 
-      const levelToUse = category === 'sentence' ? null : level
-      const result = randomlyDisableItems(type, allItems, count, levelToUse, characterFilter)
-      setMessage(result.message)
+      setMessage(messages.length === 1 ? messages[0] : `Disabled ${totalDisabled} items across ${selectedLevels.length} level(s)`)
       updateRandomlyDisabledCount()
     } catch (error) {
       console.error('Error disabling items:', error)
@@ -81,9 +168,29 @@ function BulkManagement() {
     setMessage('')
     try {
       const type = getCategoryType(category)
-      const levelToUse = category === 'sentence' ? null : level
-      const result = reenableRandomlyDisabled(type, levelToUse)
-      setMessage(result.message)
+      let totalReenabled = 0
+      let messages = []
+
+      if (category === 'sentence') {
+        const result = reenableRandomlyDisabled(type, null)
+        totalReenabled = result.reenabled || 0
+        messages.push(result.message)
+      } else {
+        // Re-enable for all selected levels
+        for (const lvl of selectedLevels) {
+          const result = reenableRandomlyDisabled(type, lvl)
+          totalReenabled += result.reenabled || 0
+          if (result.reenabled > 0) {
+            messages.push(`Level ${lvl}: ${result.message}`)
+          }
+        }
+      }
+
+      if (totalReenabled === 0) {
+        setMessage('No randomly disabled items to re-enable')
+      } else {
+        setMessage(messages.length === 1 ? messages[0] : `Re-enabled ${totalReenabled} items across ${selectedLevels.length} level(s)`)
+      }
       updateRandomlyDisabledCount()
     } catch (error) {
       console.error('Error re-enabling items:', error)
@@ -97,9 +204,22 @@ function BulkManagement() {
     setCategory(newCategory)
     const available = AVAILABLE_LEVELS[newCategory]
     if (available.length > 0) {
-      setLevel(available[0])
+      setSelectedLevels([available[0]])
+    } else {
+      setSelectedLevels([])
     }
     setMessage('')
+  }
+
+  const toggleLevel = (lvl) => {
+    setSelectedLevels((prev) => {
+      if (prev.includes(lvl)) {
+        const newLevels = prev.filter((l) => l !== lvl)
+        return newLevels.length > 0 ? newLevels : [lvl] // Keep at least one selected
+      } else {
+        return [...prev, lvl].sort()
+      }
+    })
   }
 
   return (
@@ -115,16 +235,26 @@ function BulkManagement() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Category
             </label>
-            <select
-              value={category}
-              onChange={(e) => handleCategoryChange(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="hsk">HSK Vocabulary</option>
-              <option value="tocfl">TOCFL Vocabulary</option>
-              <option value="kanji">Kanji</option>
-              <option value="sentence">Sentence</option>
-            </select>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { value: 'hsk', label: 'HSK', color: 'blue' },
+                { value: 'tocfl', label: 'TOCFL', color: 'green' },
+                { value: 'kanji', label: 'Kanji', color: 'purple' },
+                { value: 'sentence', label: 'Sentence', color: 'orange' }
+              ].map((cat) => (
+                <button
+                  key={cat.value}
+                  onClick={() => handleCategoryChange(cat.value)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                    category === cat.value
+                      ? `bg-${cat.color}-500 text-white`
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {(category === 'hsk' || category === 'tocfl' || category === 'kanji') && (
@@ -132,17 +262,29 @@ function BulkManagement() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 {category === 'kanji' ? 'Grade' : 'Level'}
               </label>
-              <select
-                value={level}
-                onChange={(e) => setLevel(Number(e.target.value))}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                {AVAILABLE_LEVELS[category].map((lvl) => (
-                  <option key={lvl} value={lvl}>
-                    {category === 'kanji' ? `Grade ${lvl}` : `Level ${lvl}`}
-                  </option>
-                ))}
-              </select>
+              <div className="flex gap-2">
+                {AVAILABLE_LEVELS[category].map((lvl) => {
+                  const colorMap = {
+                    hsk: 'blue',
+                    tocfl: 'green',
+                    kanji: 'purple'
+                  }
+                  const color = colorMap[category] || 'blue'
+                  return (
+                    <button
+                      key={lvl}
+                      onClick={() => toggleLevel(lvl)}
+                      className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                        selectedLevels.includes(lvl)
+                          ? `bg-${color}-500 text-white`
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      {lvl}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
           )}
 
@@ -151,15 +293,29 @@ function BulkManagement() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Character Type
               </label>
-              <select
-                value={characterFilter}
-                onChange={(e) => setCharacterFilter(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="all">All</option>
-                <option value="single">Single Character</option>
-                <option value="multi">Multi Character</option>
-              </select>
+              <div className="flex gap-2">
+                {['all', 'single', 'multi'].map((filter) => {
+                  const colorMap = {
+                    hsk: 'blue',
+                    tocfl: 'green',
+                    sentence: 'orange'
+                  }
+                  const color = colorMap[category] || 'blue'
+                  return (
+                    <button
+                      key={filter}
+                      onClick={() => setCharacterFilter(filter)}
+                      className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                        characterFilter === filter
+                          ? `bg-${color}-500 text-white`
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      {filter === 'all' ? 'All' : filter === 'single' ? 'Single' : 'Multiple'}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
           )}
 
@@ -210,7 +366,18 @@ function BulkManagement() {
             <button
               onClick={handleRandomDisable}
               disabled={loading}
-              className="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+              className="px-6 py-2 text-white rounded-md disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+              style={{ backgroundColor: '#282c34' }}
+              onMouseEnter={(e) => {
+                if (!loading) {
+                  e.target.style.backgroundColor = '#3a3f47'
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!loading) {
+                  e.target.style.backgroundColor = '#282c34'
+                }
+              }}
             >
               {loading ? 'Processing...' : 'Randomly Disable'}
             </button>
@@ -227,9 +394,9 @@ function BulkManagement() {
           </div>
 
           {randomlyDisabledCount > 0 && (
-            <div className="mt-4 p-3 bg-blue-50 rounded-md">
-              <p className="text-sm text-blue-700">
-                <strong>{randomlyDisabledCount}</strong> items are currently randomly disabled for this category and level.
+            <div className="mt-4 p-3 bg-gray-50 rounded-md">
+              <p className="text-sm text-gray-700">
+                <strong>{randomlyDisabledCount}</strong> items are currently randomly disabled for this category{selectedLevels.length > 0 && ` and selected level(s)`}.
                 Click "Re-enable" to restore them.
               </p>
             </div>
@@ -240,23 +407,23 @@ function BulkManagement() {
           <h2 className="text-xl font-bold mb-4 text-gray-800">How it works</h2>
           <ul className="space-y-2 text-gray-600">
             <li className="flex items-start">
-              <span className="text-blue-500 mr-2">•</span>
+              <span className="text-gray-600 mr-2">•</span>
               <span>Select a category and level/grade</span>
             </li>
             <li className="flex items-start">
-              <span className="text-blue-500 mr-2">•</span>
+              <span className="text-gray-600 mr-2">•</span>
               <span>Specify how many items you want to randomly disable</span>
             </li>
             <li className="flex items-start">
-              <span className="text-blue-500 mr-2">•</span>
+              <span className="text-gray-600 mr-2">•</span>
               <span>The system will randomly select and disable that many enabled items</span>
             </li>
             <li className="flex items-start">
-              <span className="text-blue-500 mr-2">•</span>
+              <span className="text-gray-600 mr-2">•</span>
               <span>You can re-enable all randomly disabled items at any time</span>
             </li>
             <li className="flex items-start">
-              <span className="text-blue-500 mr-2">•</span>
+              <span className="text-gray-600 mr-2">•</span>
               <span>Each category and level combination is tracked separately</span>
             </li>
           </ul>

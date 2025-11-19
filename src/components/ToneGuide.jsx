@@ -16,9 +16,10 @@ function ToneGuide() {
             onClick={() => setActiveTab('mandarin')}
             className={`px-3 py-2 text-sm md:px-4 md:py-2 md:text-base font-medium transition-colors whitespace-nowrap ${
               activeTab === 'mandarin'
-                ? 'border-b-2 border-blue-500 text-blue-600'
+                ? 'border-b-2 text-gray-800'
                 : 'text-gray-600 hover:text-gray-800'
             }`}
+            style={activeTab === 'mandarin' ? { borderBottomColor: '#282c34' } : {}}
           >
             Mandarin
           </button>
@@ -26,9 +27,10 @@ function ToneGuide() {
             onClick={() => setActiveTab('cantonese')}
             className={`px-3 py-2 text-sm md:px-4 md:py-2 md:text-base font-medium transition-colors whitespace-nowrap ${
               activeTab === 'cantonese'
-                ? 'border-b-2 border-blue-500 text-blue-600'
+                ? 'border-b-2 text-gray-800'
                 : 'text-gray-600 hover:text-gray-800'
             }`}
+            style={activeTab === 'cantonese' ? { borderBottomColor: '#282c34' } : {}}
           >
             Cantonese
           </button>
@@ -36,9 +38,10 @@ function ToneGuide() {
             onClick={() => setActiveTab('vietnamese')}
             className={`px-3 py-2 text-sm md:px-4 md:py-2 md:text-base font-medium transition-colors whitespace-nowrap ${
               activeTab === 'vietnamese'
-                ? 'border-b-2 border-blue-500 text-blue-600'
+                ? 'border-b-2 text-gray-800'
                 : 'text-gray-600 hover:text-gray-800'
             }`}
+            style={activeTab === 'vietnamese' ? { borderBottomColor: '#282c34' } : {}}
           >
             Vietnamese
           </button>
@@ -204,8 +207,9 @@ function CantoneseToneCard({ tone }) {
           className={`px-4 py-2 rounded-md font-medium transition-colors ${
             isPlaying
               ? 'bg-red-500 text-white hover:bg-red-600'
-              : 'bg-blue-500 text-white hover:bg-blue-600'
+              : 'text-white'
           }`}
+          style={!isPlaying ? { backgroundColor: '#282c34' } : {}}
         >
           {isPlaying ? '⏸ Stop' : '▶ Play'}
         </button>
