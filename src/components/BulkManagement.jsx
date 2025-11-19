@@ -237,19 +237,20 @@ function BulkManagement() {
             </label>
             <div className="flex flex-wrap gap-2">
               {[
-                { value: 'hsk', label: 'HSK', color: 'blue' },
-                { value: 'tocfl', label: 'TOCFL', color: 'green' },
-                { value: 'kanji', label: 'Kanji', color: 'purple' },
-                { value: 'sentence', label: 'Sentence', color: 'orange' }
+                { value: 'hsk', label: 'HSK', color: '#282c34' },
+                { value: 'tocfl', label: 'TOCFL', color: '#10b981' },
+                { value: 'kanji', label: 'Kanji', color: '#a855f7' },
+                { value: 'sentence', label: 'Sentence', color: '#f97316' }
               ].map((cat) => (
                 <button
                   key={cat.value}
                   onClick={() => handleCategoryChange(cat.value)}
                   className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                     category === cat.value
-                      ? `bg-${cat.color}-500 text-white`
+                      ? 'text-white'
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }`}
+                  style={category === cat.value ? { backgroundColor: cat.color } : {}}
                 >
                   {cat.label}
                 </button>
@@ -265,20 +266,21 @@ function BulkManagement() {
               <div className="flex gap-2">
                 {AVAILABLE_LEVELS[category].map((lvl) => {
                   const colorMap = {
-                    hsk: 'blue',
-                    tocfl: 'green',
-                    kanji: 'purple'
+                    hsk: '#282c34',
+                    tocfl: '#10b981',
+                    kanji: '#a855f7'
                   }
-                  const color = colorMap[category] || 'blue'
+                  const color = colorMap[category] || '#282c34'
                   return (
                     <button
                       key={lvl}
                       onClick={() => toggleLevel(lvl)}
                       className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                         selectedLevels.includes(lvl)
-                          ? `bg-${color}-500 text-white`
+                          ? 'text-white'
                           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }`}
+                      style={selectedLevels.includes(lvl) ? { backgroundColor: color } : {}}
                     >
                       {lvl}
                     </button>
@@ -296,20 +298,21 @@ function BulkManagement() {
               <div className="flex gap-2">
                 {['all', 'single', 'multi'].map((filter) => {
                   const colorMap = {
-                    hsk: 'blue',
-                    tocfl: 'green',
-                    sentence: 'orange'
+                    hsk: '#282c34',
+                    tocfl: '#10b981',
+                    sentence: '#f97316'
                   }
-                  const color = colorMap[category] || 'blue'
+                  const color = colorMap[category] || '#282c34'
                   return (
                     <button
                       key={filter}
                       onClick={() => setCharacterFilter(filter)}
                       className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                         characterFilter === filter
-                          ? `bg-${color}-500 text-white`
+                          ? 'text-white'
                           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }`}
+                      style={characterFilter === filter ? { backgroundColor: color } : {}}
                     >
                       {filter === 'all' ? 'All' : filter === 'single' ? 'Single' : 'Multiple'}
                     </button>

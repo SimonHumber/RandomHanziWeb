@@ -1,97 +1,62 @@
-# Random Hanzi - Chinese Learning App
+# Random Hanzi
 
-A comprehensive React application for learning Chinese vocabulary (HSK, TOCFL), Japanese Kanji, and practicing Chinese sentences with tone guides.
+## Installation
 
-## Features
-
-### 1. HSK Vocabulary Practice
-- Practice HSK (Hanyu Shuiping Kaoshi) vocabulary levels 1-2
-- View both Simplified and Traditional Chinese characters
-- Learn Pinyin and Jyutping (Cantonese pronunciation)
-- See Vietnamese and English translations
-- Includes Han Viet readings (Sino-Vietnamese pronunciations)
-- Filter by character type (single/multi-character words)
-- Enable/disable words to customize your study list
-
-### 2. TOCFL Vocabulary Practice
-- Practice TOCFL (Test of Chinese as a Foreign Language) vocabulary
-- Taiwanese Mandarin focus
-- Same features as HSK practice
-- Traditional Chinese characters
-
-### 3. Kanji Practice
-- Learn Japanese kanji characters (grades 1-6)
-- On'yomi and Kun'yomi readings
-- Vietnamese and English translations
-- Han Viet readings for Japanese kanji
-- Grade-based filtering
-
-### 4. Sentence Practice
-- Practice complete Chinese sentences
-- View Simplified and Traditional Chinese versions
-- Pinyin and Jyutping pronunciations
-- Written Cantonese translations
-- Vietnamese and English translations
-- Han Viet readings
-
-### 5. Character List
-- Browse all characters from all modes in one place
-- Advanced search functionality
-- Filter by type, level, character count, and status
-- Enable/disable items to customize study lists
-- All features from individual practice modes
-
-### 6. Tone Guide
-- Learn Mandarin Chinese tones (4 main tones + neutral tone)
-- Learn Cantonese tones (6 tones with audio playback)
-- Learn Vietnamese tones (6 tones)
-- Interactive audio examples for Cantonese tones
-- Detailed descriptions and examples for each tone
-- Tone marks and pronunciation guides
-
-## Setup
-
-1. Install dependencies:
-```bash
-npm install
-```
-
-2. Ensure your data and audio folders are in the `public` directory:
-   - `public/data/` - Contains all JSON data files
-   - `public/audio/` - Contains Cantonese tone guide audio files (si1.mp3 through si6.mp3)
-
+1. Clone the repository or navigate to the project directory
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 3. Start the development server:
-```bash
-npm run dev
-```
+   ```bash
+   npm run dev
+   ```
+4. Open your browser and navigate to the URL shown in the terminal (typically `http://localhost:5173`)
 
-4. Build for production:
+### Building for Production
+
+To create a production build:
 ```bash
 npm run build
 ```
 
-## Data Structure
+To preview the production build:
+```bash
+npm run preview
+```
 
-The app expects the following JSON files in `public/data/`:
-- `hsk_level1.json`
-- `hsk_level2.json`
-- `tocfl_level1.json`
-- `kanji_grade1.json`
-- `kanji_grade2.json`
-- `sentances.json` (note: typo in filename is preserved)
+## Description
 
-Audio files should be in `public/audio/`:
-- `si1.mp3` through `si6.mp3` (Cantonese tone guide)
+Random Hanzi is a React-based web application designed to help users practice and learn Chinese characters, Japanese kanji, and Chinese sentences. The app provides a comprehensive learning experience with multiple test categories and interactive features.
 
-## Technologies Used
+### Features
 
-- React 18
-- React Router DOM
-- Vite
-- Tailwind CSS
-- LocalStorage for user preferences
+- **Random Character Generator**: Generate random vocabulary items from different categories (HSK, TOCFL, Kanji, Sentences) with customizable filters
+- **Character List**: Browse and search through vocabulary lists with filtering options
+- **Multiple Test Categories**:
+  - **HSK**: Chinese Proficiency Test vocabulary (levels 1-2)
+  - **TOCFL**: Test of Chinese as a Foreign Language vocabulary (level 1)
+  - **Kanji**: Japanese kanji characters (grades 1-2)
+  - **Sentences**: Complete Chinese sentences with multiple writing systems
+- **Tone Guide**: Interactive guide for learning tones in Mandarin Chinese, Cantonese, and Vietnamese
+- **Bulk Management**: Randomly disable/enable vocabulary items for focused practice
+- **Persistent Storage**: Your preferences and disabled items are saved in browser localStorage
+- **Responsive Design**: Fully responsive interface that works on desktop and mobile devices
 
-## Browser Support
+### Key Functionality
 
-Modern browsers that support ES6+ and LocalStorage.
+- **Multi-level Selection**: Select multiple levels/grades simultaneously for combined practice
+- **Character Type Filtering**: Filter by single or multi-character words
+- **Status Filtering**: View all, enabled, or disabled items
+- **Search Functionality**: Search across all fields (characters, pinyin, jyutping, English, Vietnamese, etc.)
+- **Toggleable Translations**: Hide/show translation fields (Pinyin, Jyutping, Vietnamese, Han Viet, English, On'yomi, Kun'yomi) with accordion-style UI
+- **Enable/Disable Items**: Mark items as enabled or disabled for personalized practice sessions
+
+### Technology Stack
+
+- **React 18**: Modern React with hooks
+- **React Router**: Client-side routing
+- **Vite**: Fast build tool and development server
+- **Tailwind CSS**: Utility-first CSS framework for responsive styling
+- **LocalStorage**: Browser storage for persisting user preferences
 
