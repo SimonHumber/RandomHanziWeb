@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { loadSentenceData } from '../utils/dataLoader'
-import { getDisabledIds, toggleItem, isItemEnabled } from '../utils/storage'
+import { getDisabledIds, toggleItem } from '../utils/storage'
 
 function SentencePractice() {
   const [data, setData] = useState([])
@@ -8,14 +8,21 @@ function SentencePractice() {
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState('all') // 'all', 'enabled', 'disabled'
   const [searchTerm, setSearchTerm] = useState('')
+  const [disabledIdsSet, setDisabledIdsSet] = useState(new Set())
 
   useEffect(() => {
     loadData()
   }, [])
 
   useEffect(() => {
+    // Update disabled IDs cache when data changes
+    const disabledIds = getDisabledIds('SENTENCES')
+    setDisabledIdsSet(new Set(disabledIds))
+  }, [data])
+
+  useEffect(() => {
     filterData()
-  }, [data, statusFilter, searchTerm])
+  }, [data, statusFilter, searchTerm, disabledIdsSet])
 
   const loadData = async () => {
     setLoading(true)
@@ -27,14 +34,14 @@ function SentencePractice() {
   const filterData = () => {
     let filtered = [...data]
 
-    // Filter by status
+    // Filter by status using cached Set
     if (statusFilter === 'enabled') {
       filtered = filtered.filter((item, index) => 
-        isItemEnabled('SENTENCES', index)
+        !disabledIdsSet.has(index)
       )
     } else if (statusFilter === 'disabled') {
       filtered = filtered.filter((item, index) => 
-        !isItemEnabled('SENTENCES', index)
+        disabledIdsSet.has(index)
       )
     }
 
@@ -59,7 +66,9 @@ function SentencePractice() {
 
   const handleToggle = (index) => {
     toggleItem('SENTENCES', index)
-    filterData()
+    // Update the cached Set
+    const disabledIds = getDisabledIds('SENTENCES')
+    setDisabledIdsSet(new Set(disabledIds))
   }
 
   if (loading) {
@@ -80,15 +89,21 @@ function SentencePractice() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Status
             </label>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-            >
-              <option value="all">All</option>
-              <option value="enabled">Enabled</option>
-              <option value="disabled">Disabled</option>
-            </select>
+            <div className="flex gap-2">
+              {['all', 'enabled', 'disabled'].map((filter) => (
+                <button
+                  key={filter}
+                  onClick={() => setStatusFilter(filter)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors capitalize ${
+                    statusFilter === filter
+                      ? 'bg-orange-500 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  {filter}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="ml-auto text-sm text-gray-600">
@@ -118,7 +133,7 @@ function SentencePractice() {
               key={originalIndex}
               item={item}
               index={originalIndex}
-              enabled={isItemEnabled('SENTENCES', originalIndex)}
+              enabled={!disabledIdsSet.has(originalIndex)}
               onToggle={() => handleToggle(originalIndex)}
             />
           )

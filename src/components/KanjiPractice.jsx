@@ -1,38 +1,64 @@
 import { useState, useEffect } from 'react'
 import { loadKanjiData } from '../utils/dataLoader'
-import { getDisabledIds, toggleItem, isItemEnabled } from '../utils/storage'
+import { getDisabledIds, toggleItem } from '../utils/storage'
 
 function KanjiPractice() {
-  const [grade, setGrade] = useState(1)
+  const [selectedGrades, setSelectedGrades] = useState([1])
   const [data, setData] = useState([])
   const [filteredData, setFilteredData] = useState([])
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState('all') // 'all', 'enabled', 'disabled'
   const [searchTerm, setSearchTerm] = useState('')
+  const [disabledIdsSet, setDisabledIdsSet] = useState(new Set())
 
   useEffect(() => {
     loadData()
-  }, [grade])
+  }, [selectedGrades])
+
+  useEffect(() => {
+    // Update disabled IDs cache when data changes
+    const disabledIds = getDisabledIds('KANJI')
+    setDisabledIdsSet(new Set(disabledIds))
+  }, [data])
 
   useEffect(() => {
     filterData()
-  }, [data, statusFilter, searchTerm])
+  }, [data, statusFilter, searchTerm, disabledIdsSet])
 
   const loadData = async () => {
+    if (selectedGrades.length === 0) {
+      setData([])
+      setLoading(false)
+      return
+    }
     setLoading(true)
-    const loaded = await loadKanjiData(grade)
+    const loadedArrays = await Promise.all(
+      selectedGrades.map((grd) => loadKanjiData(grd))
+    )
+    const loaded = loadedArrays.flat()
     setData(loaded)
     setLoading(false)
+  }
+
+  const toggleGrade = (grd) => {
+    setSelectedGrades((prev) => {
+      if (prev.includes(grd)) {
+        const newGrades = prev.filter((g) => g !== grd)
+        return newGrades.length > 0 ? newGrades : [grd] // Keep at least one selected
+      } else {
+        return [...prev, grd].sort()
+      }
+    })
   }
 
   const filterData = () => {
     let filtered = [...data]
 
-    // Filter by status
+    // Filter by status using cached Set
     if (statusFilter === 'enabled') {
-      filtered = filtered.filter((item) => isItemEnabled('KANJI', item.kanji))
+      filtered = filtered.filter((item) => !disabledIdsSet.has(item.kanji))
     } else if (statusFilter === 'disabled') {
-      filtered = filtered.filter((item) => !isItemEnabled('KANJI', item.kanji))
+      filtered = filtered.filter((item) => disabledIdsSet.has(item.kanji))
     }
 
     // Filter by search term
@@ -55,7 +81,9 @@ function KanjiPractice() {
 
   const handleToggle = (kanji) => {
     toggleItem('KANJI', kanji)
-    filterData()
+    // Update the cached Set
+    const disabledIds = getDisabledIds('KANJI')
+    setDisabledIdsSet(new Set(disabledIds))
   }
 
   if (loading) {
@@ -76,29 +104,42 @@ function KanjiPractice() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Grade
             </label>
-            <select
-              value={grade}
-              onChange={(e) => setGrade(Number(e.target.value))}
-              className="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-            >
-              <option value={1}>Grade 1</option>
-              <option value={2}>Grade 2</option>
-            </select>
+            <div className="flex gap-2">
+              {[1, 2].map((grd) => (
+                <button
+                  key={grd}
+                  onClick={() => toggleGrade(grd)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                    selectedGrades.includes(grd)
+                      ? 'bg-purple-500 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  {grd}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Status
             </label>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-            >
-              <option value="all">All</option>
-              <option value="enabled">Enabled</option>
-              <option value="disabled">Disabled</option>
-            </select>
+            <div className="flex gap-2">
+              {['all', 'enabled', 'disabled'].map((filter) => (
+                <button
+                  key={filter}
+                  onClick={() => setStatusFilter(filter)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors capitalize ${
+                    statusFilter === filter
+                      ? 'bg-purple-500 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  {filter}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="ml-auto text-sm text-gray-600">
@@ -125,7 +166,7 @@ function KanjiPractice() {
           <KanjiCard
             key={`${item.kanji}-${index}`}
             item={item}
-            enabled={isItemEnabled('KANJI', item.kanji)}
+            enabled={!disabledIdsSet.has(item.kanji)}
             onToggle={() => handleToggle(item.kanji)}
           />
         ))}

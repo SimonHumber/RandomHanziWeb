@@ -1,29 +1,55 @@
 import { useState, useEffect } from 'react'
 import { loadTOCFLData } from '../utils/dataLoader'
-import { getDisabledIds, toggleItem, isItemEnabled } from '../utils/storage'
+import { getDisabledIds, toggleItem } from '../utils/storage'
 
 function TOCFLPractice() {
-  const [level, setLevel] = useState(1)
+  const [selectedLevels, setSelectedLevels] = useState([1])
   const [data, setData] = useState([])
   const [filteredData, setFilteredData] = useState([])
   const [loading, setLoading] = useState(true)
-  const [characterFilter, setCharacterFilter] = useState('all')
+  const [characterFilter, setCharacterFilter] = useState('single')
   const [statusFilter, setStatusFilter] = useState('all') // 'all', 'enabled', 'disabled'
   const [searchTerm, setSearchTerm] = useState('')
+  const [disabledIdsSet, setDisabledIdsSet] = useState(new Set())
 
   useEffect(() => {
     loadData()
-  }, [level])
+  }, [selectedLevels])
+
+  useEffect(() => {
+    // Update disabled IDs cache when data changes
+    const disabledIds = getDisabledIds('TOCFL')
+    setDisabledIdsSet(new Set(disabledIds))
+  }, [data])
 
   useEffect(() => {
     filterData()
-  }, [data, characterFilter, statusFilter, searchTerm])
+  }, [data, characterFilter, statusFilter, searchTerm, disabledIdsSet])
 
   const loadData = async () => {
+    if (selectedLevels.length === 0) {
+      setData([])
+      setLoading(false)
+      return
+    }
     setLoading(true)
-    const loaded = await loadTOCFLData(level)
+    const loadedArrays = await Promise.all(
+      selectedLevels.map((lvl) => loadTOCFLData(lvl))
+    )
+    const loaded = loadedArrays.flat()
     setData(loaded)
     setLoading(false)
+  }
+
+  const toggleLevel = (lvl) => {
+    setSelectedLevels((prev) => {
+      if (prev.includes(lvl)) {
+        const newLevels = prev.filter((l) => l !== lvl)
+        return newLevels.length > 0 ? newLevels : [lvl] // Keep at least one selected
+      } else {
+        return [...prev, lvl].sort()
+      }
+    })
   }
 
   const filterData = () => {
@@ -35,11 +61,11 @@ function TOCFLPractice() {
       filtered = filtered.filter((item) => item.characterCount > 1)
     }
 
-    // Filter by status
+    // Filter by status using cached Set
     if (statusFilter === 'enabled') {
-      filtered = filtered.filter((item) => isItemEnabled('TOCFL', item.id))
+      filtered = filtered.filter((item) => !disabledIdsSet.has(item.id))
     } else if (statusFilter === 'disabled') {
-      filtered = filtered.filter((item) => !isItemEnabled('TOCFL', item.id))
+      filtered = filtered.filter((item) => disabledIdsSet.has(item.id))
     }
 
     // Filter by search term
@@ -63,7 +89,9 @@ function TOCFLPractice() {
 
   const handleToggle = (id) => {
     toggleItem('TOCFL', id)
-    filterData()
+    // Update the cached Set
+    const disabledIds = getDisabledIds('TOCFL')
+    setDisabledIdsSet(new Set(disabledIds))
   }
 
   if (loading) {
@@ -84,43 +112,63 @@ function TOCFLPractice() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Level
             </label>
-            <select
-              value={level}
-              onChange={(e) => setLevel(Number(e.target.value))}
-              className="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500"
-            >
-              <option value={1}>Level 1</option>
-            </select>
+            <div className="flex gap-2">
+              {[1].map((lvl) => (
+                <button
+                  key={lvl}
+                  onClick={() => toggleLevel(lvl)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                    selectedLevels.includes(lvl)
+                      ? 'bg-green-500 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  {lvl}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Character Type
             </label>
-            <select
-              value={characterFilter}
-              onChange={(e) => setCharacterFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500"
-            >
-              <option value="all">All</option>
-              <option value="single">Single Character</option>
-              <option value="multi">Multi Character</option>
-            </select>
+            <div className="flex gap-2">
+              {['all', 'single', 'multi'].map((filter) => (
+                <button
+                  key={filter}
+                  onClick={() => setCharacterFilter(filter)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                    characterFilter === filter
+                      ? 'bg-green-500 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  {filter === 'all' ? 'All' : filter === 'single' ? 'Single' : 'Multiple'}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Status
             </label>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500"
-            >
-              <option value="all">All</option>
-              <option value="enabled">Enabled</option>
-              <option value="disabled">Disabled</option>
-            </select>
+            <div className="flex gap-2">
+              {['all', 'enabled', 'disabled'].map((filter) => (
+                <button
+                  key={filter}
+                  onClick={() => setStatusFilter(filter)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors capitalize ${
+                    statusFilter === filter
+                      ? 'bg-green-500 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  {filter}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="ml-auto text-sm text-gray-600">
@@ -147,7 +195,7 @@ function TOCFLPractice() {
           <VocabularyCard
             key={item.id}
             item={item}
-            enabled={isItemEnabled('TOCFL', item.id)}
+            enabled={!disabledIdsSet.has(item.id)}
             onToggle={() => handleToggle(item.id)}
           />
         ))}
