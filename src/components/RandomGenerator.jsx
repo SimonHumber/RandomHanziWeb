@@ -537,8 +537,13 @@ function HideableField({ label, value, show, onToggle, colorScheme = 'blue' }) {
     <div className={`border-b ${colors.border}`} style={colors.borderStyle || {}}>
       <button
         onClick={onToggle}
-        className={`w-full flex justify-between items-center py-3 px-3 text-left transition-colors ${colors.header}`}
-        style={colors.headerStyle || {}}
+        className={`w-full flex justify-between items-center py-3 px-3 text-left transition-colors ${colors.header} select-none`}
+        style={{
+          ...colors.headerStyle,
+          WebkitTapHighlightColor: 'transparent',
+          userSelect: 'none',
+          WebkitUserSelect: 'none'
+        }}
         onMouseEnter={(e) => {
           if (colorScheme === 'blue' && colors.headerStyle) {
             e.target.style.backgroundColor = '#e0e0e0'
@@ -550,11 +555,11 @@ function HideableField({ label, value, show, onToggle, colorScheme = 'blue' }) {
           }
         }}
       >
-        <span className={`font-semibold ${colors.text}`}>{label}</span>
+        <span className={`font-semibold ${colors.text} select-none pointer-events-none`} style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>{label}</span>
         <svg
           className={`w-5 h-5 ${colors.icon} transition-transform duration-200 ${show ? 'transform rotate-180' : ''
-            }`}
-          style={colors.iconStyle || {}}
+            } pointer-events-none`}
+          style={{ ...colors.iconStyle, userSelect: 'none', WebkitUserSelect: 'none' }}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
